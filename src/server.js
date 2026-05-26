@@ -1,11 +1,15 @@
 require('dotenv').config();
+
+// Importa models para garantir que as associações sejam registradas
+require('./models');
+
 const app           = require('./app');
 const { connectDB } = require('./config/database');
 
 const PORT = process.env.PORT || 3000;
 
 const start = async () => {
-  await connectDB();
+  await connectDB(); // conecta e faz sync dos models
 
   app.listen(PORT, () => {
     console.log('');

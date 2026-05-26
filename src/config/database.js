@@ -1,30 +1,53 @@
-const { Pool } = require('pg');
+const { Sequelize } = require('sequelize');
 
-const pool = new Pool({
-  host:     process.env.DB_HOST     || 'localhost',
-  port:     parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME     || 'hydrotrack',
-  user:     process.env.DB_USER     || 'postgres',
-  password: process.env.DB_PASSWORD || '',
-  // Pool de conexões — adequado para produção via ngrok
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
-
-pool.on('error', (err) => {
-  console.error('❌ Erro inesperado no pool do PostgreSQL:', err);
-});
+// Railway injeta DATABASE_URL automaticamente ao adicionar o PostgreSQL
+// Em desenvolvimento local, usa as variáveis individuais do .env
+const sequelize = process.env.DATABASE_URL
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: {
+          require:            true,
+          rejectUnauthorized: false, // necessário para o certificado do Railway
+        },
+      },
+      logging: false,
+      pool: {
+        max:     10,
+        min:     0,
+        acquire: 30000,
+        idle:    10000,
+      },
+    })
+  : new Sequelize(
+      process.env.DB_NAME     || 'hydrotrack',
+      process.env.DB_USER     || 'postgres',
+      process.env.DB_PASSWORD || '',
+      {
+        host:    process.env.DB_HOST || 'localhost',
+        port:    parseInt(process.env.DB_PORT || '5432'),
+        dialect: 'postgres',
+        logging: false,
+        pool: {
+          max:     10,
+          min:     0,
+          acquire: 30000,
+          idle:    10000,
+        },
+      }
+    );
 
 const connectDB = async () => {
   try {
-    const client = await pool.connect();
-    console.log('✅ PostgreSQL conectado com sucesso');
-    client.release();
+    await sequelize.authenticate();
+    console.log('✅ PostgreSQL conectado via Sequelize');
+
+    await sequelize.sync({ alter: true });
+    console.log('✅ Models sincronizados com o banco');
   } catch (err) {
     console.error('❌ Falha ao conectar no PostgreSQL:', err.message);
     process.exit(1);
   }
 };
 
-module.exports = { pool, connectDB };
+module.exports = { sequelize, connectDB };
