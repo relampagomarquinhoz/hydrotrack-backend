@@ -5,9 +5,9 @@ const nodemailer = require('nodemailer');
 const { User }   = require('../models');
 
 const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST || 'smtp.ethereal.email',
-  port:   Number(process.env.SMTP_PORT) || 587,
-  secure: false,
+  host:   process.env.SMTP_HOST || 'smtp.gmail.com',
+  port:   Number(process.env.SMTP_PORT) || 465,
+  secure: true,
   auth: {
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
@@ -26,11 +26,10 @@ router.post('/forgot-password', async (req, res) => {
   try {
     const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
 
-    // Sempre retorna 200 para não vazar se o email existe
     if (!user) return res.status(200).json({ message: 'Se o email existir, você receberá o código.' });
 
     const code      = generateCode();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     user.reset_token         = code;
     user.reset_token_expires = expiresAt;
