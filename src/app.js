@@ -11,6 +11,9 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 
+// ✅ Necessário para o Render (proxy reverso) — resolve ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(cors({
   origin: '*',
@@ -25,9 +28,11 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// ✅ Aumentado para 20 — 10 era pouco e bloqueava esqueci-senha durante testes
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, max: 10,
-  message: { success: false, message: 'Muitas tentativas de login. Aguarde 15 minutos.' },
+  windowMs: 15 * 60 * 1000, max: 20,
+  standardHeaders: true, legacyHeaders: false,
+  message: { success: false, message: 'Muitas tentativas. Aguarde 15 minutos.' },
 });
 
 app.use(express.json({ limit: '10kb' }));
