@@ -5,12 +5,12 @@ const nodemailer = require('nodemailer');
 const { User }   = require('../models');
 
 const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST || 'smtp.gmail.com',
-  port:   Number(process.env.SMTP_PORT) || 465,
-  secure: true,
+  host:   process.env.SMTP_HOST,
+  port:   587,
+  secure: false,
   auth: {
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || '',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
 });
 
@@ -36,7 +36,7 @@ router.post('/forgot-password', async (req, res) => {
     await user.save();
 
     await transporter.sendMail({
-      from:    `"HydroTrack" <${process.env.SMTP_USER || 'noreply@hydrotrack.app'}>`,
+      from:    `"HydroTrack" <${process.env.SMTP_USER}>`,
       to:      email,
       subject: 'Código de redefinição de senha — HydroTrack',
       text:    `Olá, ${user.name}!\n\nSeu código é: ${code}\n\nExpira em 15 minutos.`,
