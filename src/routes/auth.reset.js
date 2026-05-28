@@ -1,18 +1,10 @@
-const express    = require('express');
-const router     = express.Router();
-const bcrypt     = require('bcryptjs');
-const nodemailer = require('nodemailer');
-const { User }   = require('../models');
+const express  = require('express');
+const router   = express.Router();
+const bcrypt   = require('bcryptjs');
+const { Resend } = require('resend');
+const { User } = require('../models');
 
-const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST,
-  port:   587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function generateCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -35,8 +27,8 @@ router.post('/forgot-password', async (req, res) => {
     user.reset_token_expires = expiresAt;
     await user.save();
 
-    await transporter.sendMail({
-      from:    `"HydroTrack" <${process.env.SMTP_USER}>`,
+    await resend.emails.send({
+      from:    'HydroTrack <onboarding@resend.dev>',
       to:      email,
       subject: 'Código de redefinição de senha — HydroTrack',
       text:    `Olá, ${user.name}!\n\nSeu código é: ${code}\n\nExpira em 15 minutos.`,
