@@ -198,8 +198,10 @@ exports.streak = async (req, res) => {
     });
 
     let streak = 0;
-    let cursor = new Date();
-    cursor.setHours(0, 0, 0, 0);
+    // FIX: cursor usa fuso de Brasília para coincidir com as datas do banco
+    const nowBrasilia = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+    nowBrasilia.setHours(0, 0, 0, 0);
+    let cursor = nowBrasilia;
 
     for (const row of rows) {
       const rowDate = new Date(row.date);
