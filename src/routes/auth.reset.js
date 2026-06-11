@@ -1,10 +1,40 @@
-const express  = require('express');
-const router   = express.Router();
-const bcrypt   = require('bcryptjs');
+// src/routes/auth.reset.js  — VERSÃO CORRIGIDA
+//
+// PROBLEMA ANTERIOR:
+//   from: 'HydroTrack <onboarding@resend.dev>'
+//   O domínio "resend.dev" só entrega emails para o endereço verificado
+//   na sua conta Resend (o seu próprio Gmail). Para qualquer outro
+//   destinatário o Resend bloqueia silenciosamente.
+//
+// SOLUÇÃO (2 opções — escolha uma):
+//
+//   OPÇÃO A — Domínio próprio verificado no Resend (RECOMENDADO):
+//     1. Acesse https://resend.com/domains
+//     2. Adicione seu domínio (ex: hydrotrack.app ou até um subdomínio gratuito)
+//     3. Siga os passos de DNS e aguarde verificação (~5 min)
+//     4. Troque o from abaixo para: 'HydroTrack <noreply@SEU_DOMINIO>'
+//     5. Pronto — funciona para qualquer destinatário.
+//
+//   OPÇÃO B — Sem domínio próprio (usando Resend com email verificado):
+//     1. Acesse https://resend.com/emails/verified
+//     2. Adicione e verifique o email do destinatário (limitado)
+//     Não escala — serve só para testes.
+//
+// Este arquivo já está preparado para a OPÇÃO A.
+// Troque RESEND_FROM_EMAIL na variável de ambiente e está feito.
+
+const express    = require('express');
+const router     = express.Router();
+const bcrypt     = require('bcryptjs');
 const { Resend } = require('resend');
-const { User } = require('../models');
+const { User }   = require('../models');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Configure no Render (Environment Variables):
+//   RESEND_FROM_EMAIL = noreply@seu-dominio.com
+// Enquanto não tiver domínio próprio, use o email verificado na sua conta Resend.
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
 function generateCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -18,7 +48,10 @@ router.post('/forgot-password', async (req, res) => {
   try {
     const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
 
-    if (!user) return res.status(200).json({ message: 'Se o email existir, você receberá o código.' });
+    // Sempre retorna 200 para não revelar se o email existe
+    if (!user) {
+      return res.status(200).json({ message: 'Se o email existir, você receberá o código.' });
+    }
 
     const code      = generateCode();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
@@ -27,8 +60,8 @@ router.post('/forgot-password', async (req, res) => {
     user.reset_token_expires = expiresAt;
     await user.save();
 
-    await resend.emails.send({
-      from:    'HydroTrack <onboarding@resend.dev>',
+    const { error } = await resend.emails.send({
+      from:    `HydroTrack <${FROM_EMAIL}>`,
       to:      email,
       subject: 'Código de redefinição de senha — HydroTrack',
       text:    `Olá, ${user.name}!\n\nSeu código é: ${code}\n\nExpira em 15 minutos.`,
@@ -45,6 +78,11 @@ router.post('/forgot-password', async (req, res) => {
         </div>
       `,
     });
+
+    // Loga erro do Resend sem quebrar a resposta para o usuário
+    if (error) {
+      console.error('[forgot-password] Resend error:', error);
+    }
 
     return res.status(200).json({ message: 'Se o email existir, você receberá o código.' });
   } catch (err) {

@@ -62,6 +62,10 @@ exports.stats = async (req, res) => {
       where: { created_at: { [Op.gte]: since7d } },
     });
 
+    // Contagem por gênero
+    const maleUsers   = await User.count({ where: { gender: 'male'   } });
+    const femaleUsers = await User.count({ where: { gender: 'female' } });
+
     return res.json({
       success: true,
       stats: {
@@ -69,6 +73,8 @@ exports.stats = async (req, res) => {
         active_users_7d:    activeUsers,
         new_users_7d:       newUsers7d,
         avg_ml_today:       avgTodayPerUser,
+        male_users:         maleUsers,
+        female_users:       femaleUsers,
       },
     });
   } catch (err) {

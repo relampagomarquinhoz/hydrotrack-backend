@@ -8,6 +8,8 @@ const hydRoutes   = require('./routes/hydration');
 const notifRoutes = require('./routes/notifications');
 const resetRoutes = require('./routes/auth.reset');
 const adminRoutes = require('./routes/admin');
+const pushRoutes  = require('./routes/pushToken');
+require('./services/notificationScheduler');
 
 const app = express();
 
@@ -42,6 +44,7 @@ app.use('/auth',          authLimiter, resetRoutes);
 app.use('/hydration',     hydRoutes);
 app.use('/notifications', notifRoutes);
 app.use('/admin',         adminRoutes);
+app.use('/push',          pushRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });

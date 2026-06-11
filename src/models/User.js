@@ -45,6 +45,17 @@ const User = sequelize.define('User', {
     type:      DataTypes.DATE,
     allowNull: true,
   },
+
+  // ── NOVO ──────────────────────────────────────────────
+  // Token do Expo para push notifications no celular.
+  // Salvo pelo app ao fazer login e renovado a cada abertura.
+  expo_push_token: {
+    type:      DataTypes.TEXT,
+    allowNull: true,
+    defaultValue: null,
+  },
+  // ─────────────────────────────────────────────────────
+
 }, {
   tableName:  'users',
   timestamps: true,
