@@ -36,9 +36,11 @@ exports.todaySummary = async (req, res) => {
     });
     const daily_goal = user?.daily_goal_ml || 2000;
 
-    const startOfDay = new Date();
+    // FIX: calcula início/fim do dia no fuso de Brasília, não em UTC
+    const nowBrasilia = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+    const startOfDay = new Date(nowBrasilia);
     startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
+    const endOfDay = new Date(nowBrasilia);
     endOfDay.setHours(23, 59, 59, 999);
 
     const logs = await HydrationLog.findAll({
